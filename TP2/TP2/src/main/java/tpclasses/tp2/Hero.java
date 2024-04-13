@@ -1,13 +1,11 @@
 package tpclasses.tp2;
 
-public class Hero {
+public class Hero extends Characters {
 
-    double positionX;
-    double positionY;
 
-    public void Hero(double positionX, double positionY ){
-        this.positionX = positionX;
-        this.positionY = positionY;
+
+    public void Hero( ){
+//        super();
     }
 
 

@@ -1,8 +1,24 @@
 package tpclasses.tp2;
 
-public class Enemy{
-
-    int gravity;
-    int speed;
+public class Enemy extends Characters{
+    // Atributes
     int gold;
-    int damage;}
+
+    // Constructor
+    public void Enemy(int gold){
+//       super();
+        this.gold = gold;
+    }
+
+
+    // Getters
+    public int getGold() {
+        return gold;
+    }
+
+    // Setters
+
+    public void setGold(int gold) {
+        this.gold = gold;
+    }
+}

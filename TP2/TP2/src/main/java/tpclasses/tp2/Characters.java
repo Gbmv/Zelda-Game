@@ -2,23 +2,28 @@ package tpclasses.tp2;
 
 public class Characters {
 
-    int gravity;
+    // Atributtes
+
     int speed;
-    int damage;
+
     String img;
     double positionX;
     double positionY;
 
+    // velociade vx et vy
+    // slowdown
 
 
-    public void Characters(int gravity, int speed, int damage, String img, double positionX, double positionY){
-        this.gravity = gravity;
+    // Constructor
+    public  Characters( int speed, String img, double positionX, double positionY){
         this.speed = speed;
-        this.damage = damage;
         this.img = img;
         this.positionX = positionX;
         this.positionY = positionY;
     }
+
+
+
 
     // Getters
     public int getSpeed() {
@@ -26,13 +31,8 @@ public class Characters {
     }
 
 
-    public int getGravity() {
-        return gravity;
-    }
 
-    public int getDamage() {
-        return damage;
-    }
+
 
     public String getImg() {
         return img;
@@ -51,15 +51,9 @@ public class Characters {
         this.speed = speed;
     }
 
-    public void setDamage(int damage) {
-        this.damage = damage;
-    }
 
 
 
-    public void setGravity(int gravity) {
-        this.gravity = gravity;
-    }
 
     public void setImg(String img) {
         this.img = img;

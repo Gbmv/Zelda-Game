@@ -1,7 +1,7 @@
 package tpclasses.tp2;
 
 public class Characters {
-
+    // Blabla
     // Atributtes
 
     int speed;

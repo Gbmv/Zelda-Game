@@ -6,4 +6,3 @@ public class HeroTank extends Characters{
                 100, 200);
     }
 }
-

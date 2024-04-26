@@ -1,7 +1,7 @@
 package tpclasses.tp2;
-
 import javafx.animation.*;
 import javafx.application.Application;
+import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
@@ -9,10 +9,11 @@ import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyCode;
 import javafx.scene.layout.Pane;
+import javafx.scene.shape.Circle;
 import javafx.stage.Stage;
 import javafx.util.Duration;
-
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
 
@@ -51,6 +52,10 @@ public class Viewer extends Application {
         // Set the positions of the image views
         backgroundViewer1.setTranslateX(0);
         backgroundViewer2.setTranslateX(width);
+
+        // Height of the background
+        double backgroundHeight = backgroundImage.getHeight();
+//        System.out.println(backgroundHeight);
 
         // Add the image views to the root pane
         root.getChildren().addAll(backgroundViewer1, backgroundViewer2);
@@ -92,6 +97,7 @@ public class Viewer extends Application {
         HeroStealthy heroStealthy = new HeroStealthy();
         HeroBodyToBody heroBodyToBody = new HeroBodyToBody();
 
+
         AnimationTimer timer = new AnimationTimer() {
             private long lastUsageTime = 0;
 
@@ -102,29 +108,39 @@ public class Viewer extends Application {
 
             private double timerHero;
             private double timerCoin;
+            private double timerHeroTank;
             final double backgroundSpeed = 50;
             @Override
             public void handle(long now) {
                 double deltaTime = (now - lastTime) * 1e-9;
                 timerHero+=deltaTime;
                 timerCoin+=deltaTime;
+                timerHeroTank +=deltaTime;
+
                 lastTime = now;
 
 
             //-------------------------Implementation of the heros----------------------------------------------------//
 //                System.out.println(timerHero);
+//                if(timerHeroTank>=0.5){
+//                  createHeroTank(root,herosTank,width,backgroundHeight);
+//                }
                 if ((timerHero >= 3)) {
 //                     Gives a random number between 0 and 2
                     int randomChoice = random.nextInt(3);
+                    float  random = (float) Math.random();
 
                     if(randomChoice == 0 ){
-                        heroStealthy.createHeroStealhy(root, herosSthy, width);
+                        heroStealthy.createHeroStealhy(root, herosSthy, width,backgroundHeight,random);
                     } else if (randomChoice == 1) {
-                        heroBodyToBody.createHeroBody(root,herosBody,width,height);
+                        heroBodyToBody.createHeroBody(root,herosBody,width,backgroundHeight,random);
+                    }
+                    else{
+                     createHeroTank(root,herosTank,width,backgroundHeight,random);
                     }
 
-
                     timerHero = 0;
+
                 }
 
 
@@ -150,12 +166,23 @@ public class Viewer extends Application {
                     }
                 }
 
+                for(ImageView heroTankView:herosTank){
+                    double newX = heroTankView.getTranslateX()-backgroundSpeed * deltaTime;
+                    heroTankView.setTranslateX(newX);
 
-            //----------------------------Implementation of the coins------------------------------------------------//
+                    if(newX <-width){
+                        root.getChildren().remove(heroTankView);
+                        herosTank.remove(heroTankView);
+                        break;
+                    }
+                }
+
+
+            //-----------------------------Implementation of the coins------------------------------------------------//
 
 
                 if (timerCoin >= 2) {
-                    createCoin(root, width, height, coins);
+                    createCoin(root, width, coins);
                     timerCoin  = 0;
                 }
 
@@ -169,7 +196,7 @@ public class Viewer extends Application {
                     if (newX < -width ) {
                         root.getChildren().remove(coinView);
                         coins.remove(coinView);
-                        break; // Break loop to avoid ConcurrentModificationException
+                        break;
                     }
 
                 }
@@ -180,10 +207,10 @@ public class Viewer extends Application {
                 backgroundViewer1.setTranslateX(backgroundViewer1.getTranslateX() - backgroundSpeed * deltaTime);
                 backgroundViewer2.setTranslateX(backgroundViewer2.getTranslateX() - backgroundSpeed * deltaTime);
 
-                if (backgroundViewer1.getTranslateX() <= -width){
+                if (backgroundViewer1.getTranslateX() <= 1-width){
                     backgroundViewer1.setTranslateX(width);
                 }
-                if (backgroundViewer2.getTranslateX() <= -width){
+                if (backgroundViewer2.getTranslateX() <= 1-width){
                     backgroundViewer2.setTranslateX(width);
                 }
 
@@ -196,17 +223,35 @@ public class Viewer extends Application {
 
                 // Verify if the enemy it not in the floor
                 if (newY >= enemy.getPositionY()) {
+
                     newY = enemy.getPositionY();
+//                    speed_y += enemy.getJumpSpeed();
+//                    System.out.println(speed_y);
+                }
+
+                // Verify if it is in the sky
+                if (newY <0 || newY> canvas.getHeight()-enemyView.getFitHeight()){
+                    if (newY<0){
+                        newY = 0;
+                    }
+                    else {
+                        newY = canvas.getHeight()-enemyView.getFitHeight();
+                    }
+                    speed_y = -speed_y;
                 }
 
                 // Update the position of the enemy
                 enemyView.setLayoutY(newY);
+
+
 
                 // Space bar pressed, the enemy jumps
                 scene.setOnKeyPressed(event -> {
                     if (event.getCode() == KeyCode.SPACE) {
                         speed_y = enemy.getJumpSpeed(); // The speed of the jump
                     }
+
+
                 });
                 //---------------------------------------------------------------------------------------------------//
 
@@ -224,68 +269,86 @@ public class Viewer extends Application {
     }
 
 
-private void createCoin(Pane root, double width, double height, List<ImageView> coins) {
+private void createCoin(Pane root, double width, List<ImageView> coins) {
 
     // Load coin image
     Image coin = new Image("file:///C:\\Users\\gabri\\Desktop\\UDEM\\Hiver-2024\\IFT-1025\\TP2\\TP2\\coin.png");
     ImageView coinView = new ImageView(coin);
-    // Coin position outside the screen
-    coinView.setTranslateX(Math.random()* width + width);
     coinView.setFitWidth(50);
     coinView.setFitHeight(50);
+
     // Why error with where the image is spawed
-    coinView.setTranslateY( Math.random() * (height - coinView.getFitHeight()));
+    coinView.setTranslateY( Math.random() * 400);
+//    System.out.println(coinView.getTranslateY());
+
+    // Coin position outside the screen
+    coinView.setTranslateX(width);
     root.getChildren().add(coinView);
     coins.add(coinView);
-}
-//    public void createHeroTank(Pane root, List<ImageView> herosTank , double width) {
-//        double minX = -30; // Limite mínimo de X
-//        double maxX = 30; // Limite máximo de X
-//        double minY = -30; // Limite mínimo de Y
-//        double maxY = 30;
-//        Image heroTank = new Image("file:///C:\\Users\\gabri\\Desktop\\UDEM\\Hiver-2024\\IFT-1025\\TP2\\TP2\\heroTank.png");
-//        ImageView heroTankViewer = new ImageView(heroTank);
-//        heroTankViewer.setFitHeight(100);
-//        heroTankViewer.setFitWidth(100);
-//
-//        // Define uma posição inicial aleatória dentro do limite de X e Y
-//        double initialX = Math.random() * (maxX - minX) + minX;
-//        double initialY = Math.random() * (maxY - minY) + minY;
-//        heroTankViewer.setTranslateX(initialX);
-//        heroTankViewer.setTranslateY(initialY);
-//
-//        // Define a animação de teletransporte
-//        TranslateTransition teleportation = new TranslateTransition(Duration.seconds(0.5), heroTankViewer);
-//        teleportation.setByX(Math.random() * (maxX - minX) + minX);
-//        teleportation.setByY(Math.random() * (maxY - minY) + minY);
-//        teleportation.setInterpolator(Interpolator.LINEAR);
-//        teleportation.setAutoReverse(true);
-//        teleportation.setCycleCount(TranslateTransition.INDEFINITE);
-//        teleportation.play();
-//
-//        herosTank.add(heroTankViewer);
-//        root.getChildren().add(heroTankViewer);
-//    }
+
+
 }
 
-//    public void createHeroStealhy(Pane root , List<ImageView> herosSthy , double width){
-//        Image heroSthy = new Image("file:///C:\\Users\\gabri\\Desktop\\UDEM\\Hiver-2024\\IFT-1025\\TP2\\TP2\\heroSthy.png");
-//        ImageView heroSthyViwer = new ImageView(heroSthy);
-//        heroSthyViwer.setFitHeight(100);
-//        heroSthyViwer.setFitWidth(100);
-//        heroSthyViwer.setTranslateX(width);
-//        heroSthyViwer.setTranslateY(50);
-//        herosSthy.add(heroSthyViwer);
-//
-//        TranslateTransition translationHeroSthy = new TranslateTransition(Duration.seconds(3),heroSthyViwer);
-//        translationHeroSthy.setFromY(50);
-//        translationHeroSthy.setToY(150);
-//        translationHeroSthy.setCycleCount(TranslateTransition.INDEFINITE);
-//        translationHeroSthy.setAutoReverse(true);
-//        root.getChildren().add(heroSthyViwer);
-//        translationHeroSthy.play();
-//    }
-//}
+    private void createHeroTank(Pane root , List<ImageView> herosTank , double width,  double backgroundHeight,float random){
+
+
+
+        Image heroTank = new Image("file:///C:\\Users\\gabri\\Desktop\\UDEM\\Hiver-2024\\IFT-1025\\TP2\\TP2\\heroTank.png");
+        ImageView heroTankView = new ImageView(heroTank);
+        heroTankView.setFitHeight(100);
+        heroTankView.setFitWidth(100);
+
+
+
+        // Transport part
+        heroTankView.setTranslateX(width);
+        heroTankView.setTranslateY(random*backgroundHeight);
+
+        float colisionCenterX = (float) (heroTankView.getTranslateX()+(heroTankView.getFitWidth()/2));
+        float colisionCenterY = (float) (heroTankView.getTranslateY()+(heroTankView.getFitHeight()/2));
+
+        System.out.println(heroTankView.getFitHeight());
+        System.out.println(heroTankView.getTranslateX());
+        System.out.println(colisionCenterX);
+
+        System.out.println(heroTankView.getFitWidth());
+        System.out.println(heroTankView.getTranslateY());
+        System.out.println(colisionCenterY);
+
+
+       Timeline timeline = new Timeline();
+       timeline.setCycleCount(Animation.INDEFINITE);
+
+        KeyFrame keyFrame = new KeyFrame(Duration.seconds(0.5), event -> {
+            double destX = heroTankView.getTranslateX() + getRandomNumber(-31, 30);
+            double destY = heroTankView.getTranslateY() + getRandomNumber(-31, 30);
+
+            heroTankView.setTranslateX(destX);
+            heroTankView.setTranslateY(destY);
+
+        });
+
+       timeline.getKeyFrames().addAll(keyFrame);
+       timeline.play();
+
+
+        herosTank.add(heroTankView);
+        root.getChildren().add(heroTankView);
+
+    }
+
+
+
+
+
+
+
+        public int getRandomNumber(int min, int max) {
+            return (int) ((Math.random() * (max - min)) + min);
+        }
+
+
+}
 
 
 

@@ -45,13 +45,13 @@ public class HeroStealthy extends Characters{
 //        translationHeroSthy.play();
 //    }
 
-    public void createHeroStealhy(Pane root , List<ImageView> herosSthy , double width){
+    public void createHeroStealhy(Pane root , List<ImageView> herosSthy , double width,   double backgroundHeight, float random){
         Image heroSthy = new Image("file:///C:\\Users\\gabri\\Desktop\\UDEM\\Hiver-2024\\IFT-1025\\TP2\\TP2\\heroSthy.png");
         ImageView heroSthyViwer = new ImageView(heroSthy);
         heroSthyViwer.setFitHeight(100);
         heroSthyViwer.setFitWidth(100);
         heroSthyViwer.setTranslateX(width);
-        heroSthyViwer.setTranslateY(50);
+        heroSthyViwer.setTranslateY(random* backgroundHeight);
         herosSthy.add(heroSthyViwer);
 
         TranslateTransition translationHeroSthy = new TranslateTransition(Duration.seconds(3),heroSthyViwer);

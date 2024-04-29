@@ -45,20 +45,28 @@ public class HeroStealthy extends Characters{
 //        translationHeroSthy.play();
 //    }
 
-    public void createHeroStealhy(Pane root , List<ImageView> herosSthy , double width,   double backgroundHeight, float random){
+    public void createHeroStealhy(Pane root , List<ImageView> herosSthy , double width,   double backgroundHeight){
         Image heroSthy = new Image("file:///C:\\Users\\gabri\\Desktop\\UDEM\\Hiver-2024\\IFT-1025\\TP2\\TP2\\heroSthy.png");
         ImageView heroSthyViwer = new ImageView(heroSthy);
         heroSthyViwer.setFitHeight(100);
         heroSthyViwer.setFitWidth(100);
         heroSthyViwer.setTranslateX(width);
-        heroSthyViwer.setTranslateY(random* backgroundHeight);
+//        heroSthyViwer.setTranslateY(Math.random()* backgroundHeight);
         herosSthy.add(heroSthyViwer);
 
+        float positionY = (float) (Math.random()* (backgroundHeight-heroSthyViwer.getFitHeight()));
+
         TranslateTransition translationHeroSthy = new TranslateTransition(Duration.seconds(3),heroSthyViwer);
-        translationHeroSthy.setFromY(50);
-        translationHeroSthy.setToY(150);
+        translationHeroSthy.setFromY(positionY);
+        translationHeroSthy.setToY( positionY + 100);
         translationHeroSthy.setCycleCount(TranslateTransition.INDEFINITE);
         translationHeroSthy.setAutoReverse(true);
+
+        float colisionCenterX = (float) (heroSthyViwer.getTranslateX()+(heroSthyViwer.getFitWidth()/2));
+        float colisionCenterY = (float) (heroSthyViwer.getTranslateY()+(heroSthyViwer.getFitHeight()/2));
+        float radius = (float)(heroSthyViwer.getFitWidth()/2);
+
+
         root.getChildren().add(heroSthyViwer);
         translationHeroSthy.play();
     }

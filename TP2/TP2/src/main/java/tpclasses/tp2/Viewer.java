@@ -42,7 +42,7 @@ public class Viewer extends Application {
 
 
 
-        //---------------------------------------------- Background ---------------------------------------------------//
+        //---------------------------------------------- Background --------------------------------------------------//
 
         // Load background images
         Image backgroundImage = new Image("file:///C:/Users/gabri/Desktop/UDEM/Hiver-2024/IFT-1025/TP2/TP2/bg.png");
@@ -53,9 +53,6 @@ public class Viewer extends Application {
         backgroundViewer1.setTranslateX(0);
         backgroundViewer2.setTranslateX(width);
 
-        // Height of the background
-        double backgroundHeight = backgroundImage.getHeight();
-//        System.out.println(backgroundHeight);
 
         // Add the image views to the root pane
         root.getChildren().addAll(backgroundViewer1, backgroundViewer2);
@@ -99,8 +96,6 @@ public class Viewer extends Application {
 
 
         AnimationTimer timer = new AnimationTimer() {
-            private long lastUsageTime = 0;
-
             private long lastTime = System.nanoTime();
             double speed_y = 0;
 
@@ -110,6 +105,11 @@ public class Viewer extends Application {
             private double timerCoin;
             private double timerHeroTank;
             final double backgroundSpeed = 50;
+
+            // Height of the background
+            final double backgroundHeight = backgroundImage.getHeight();
+
+
             @Override
             public void handle(long now) {
                 double deltaTime = (now - lastTime) * 1e-9;
@@ -119,7 +119,7 @@ public class Viewer extends Application {
 
                 lastTime = now;
 
-
+                System.out.println(backgroundHeight);
             //-------------------------Implementation of the heros----------------------------------------------------//
 //                System.out.println(timerHero);
 //                if(timerHeroTank>=0.5){
@@ -128,15 +128,14 @@ public class Viewer extends Application {
                 if ((timerHero >= 3)) {
 //                     Gives a random number between 0 and 2
                     int randomChoice = random.nextInt(3);
-                    float  random = (float) Math.random();
 
                     if(randomChoice == 0 ){
-                        heroStealthy.createHeroStealhy(root, herosSthy, width,backgroundHeight,random);
+                        heroStealthy.createHeroStealhy(root, herosSthy, width,backgroundHeight);
                     } else if (randomChoice == 1) {
-                        heroBodyToBody.createHeroBody(root,herosBody,width,backgroundHeight,random);
+                        heroBodyToBody.createHeroBody(root,herosBody,width,backgroundHeight);
                     }
                     else{
-                     createHeroTank(root,herosTank,width,backgroundHeight,random);
+                     createHeroTank(root,herosTank,width,backgroundHeight);
                     }
 
                     timerHero = 0;
@@ -153,6 +152,16 @@ public class Viewer extends Application {
                         herosSthy.remove(heroSthyViwer);
                         break;
                     }
+
+                    // Check for collision between enemy and hero
+                    if (checkCollision(enemyView, heroSthyViwer)) {
+                        // Handle the collision here
+                        // For example:
+                        root.getChildren().remove(heroSthyViwer); // Remove hero from screen
+                        herosSthy.remove(heroSthyViwer); // Remove hero from the list
+
+                        // You might also reduce health or trigger other effects here
+                    }
                 }
 
                 for(ImageView heroBodyView: herosBody ){
@@ -163,6 +172,16 @@ public class Viewer extends Application {
                         root.getChildren().remove(heroBodyView);
                         herosBody.remove(heroBodyView);
                         break;
+                    }
+
+                    // Check for collision between enemy and hero
+                    if (checkCollision(enemyView, heroBodyView)) {
+                        // Handle the collision here
+                        // For example:
+                        root.getChildren().remove(heroBodyView); // Remove hero from screen
+                        herosBody.remove(heroBodyView); // Remove hero from the list
+
+                        // You might also reduce health or trigger other effects here
                     }
                 }
 
@@ -175,14 +194,21 @@ public class Viewer extends Application {
                         herosTank.remove(heroTankView);
                         break;
                     }
+
+                    // Check for collision between enemy and hero
+                    if (checkCollision(enemyView, heroTankView)) {
+                        // Handle the collision here
+                        // For example:
+                        root.getChildren().remove(heroTankView); // Remove hero from screen
+                        herosTank.remove(heroTankView); // Remove hero from the list
+                    }
                 }
 
 
             //-----------------------------Implementation of the coins------------------------------------------------//
 
-
                 if (timerCoin >= 2) {
-                    createCoin(root, width, coins);
+                    createCoin(root, width, coins,backgroundHeight);
                     timerCoin  = 0;
                 }
 
@@ -197,6 +223,14 @@ public class Viewer extends Application {
                         root.getChildren().remove(coinView);
                         coins.remove(coinView);
                         break;
+                    }
+                    if (checkCollision(enemyView, coinView)) {
+                        // Handle the collision here
+                        // For example:
+                        root.getChildren().remove(coinView); // Remove coin from screen
+                        herosTank.remove(coinView); // Remove coin from the list
+
+
                     }
 
                 }
@@ -223,10 +257,7 @@ public class Viewer extends Application {
 
                 // Verify if the enemy it not in the floor
                 if (newY >= enemy.getPositionY()) {
-
                     newY = enemy.getPositionY();
-//                    speed_y += enemy.getJumpSpeed();
-//                    System.out.println(speed_y);
                 }
 
                 // Verify if it is in the sky
@@ -250,13 +281,34 @@ public class Viewer extends Application {
                     if (event.getCode() == KeyCode.SPACE) {
                         speed_y = enemy.getJumpSpeed(); // The speed of the jump
                     }
-
-
                 });
                 //---------------------------------------------------------------------------------------------------//
 
+                //-----------------------------------Implementation of the colision----------------------------------//
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                //---------------------------------------------------------------------------------------------------//
                 // Clean the context
                 context.clearRect(0, 0, canvas.getWidth(), canvas.getHeight());
 
@@ -269,17 +321,24 @@ public class Viewer extends Application {
     }
 
 
-private void createCoin(Pane root, double width, List<ImageView> coins) {
+private void createCoin(Pane root, double width, List<ImageView> coins, double backgroundHeight) {
 
     // Load coin image
     Image coin = new Image("file:///C:\\Users\\gabri\\Desktop\\UDEM\\Hiver-2024\\IFT-1025\\TP2\\TP2\\coin.png");
     ImageView coinView = new ImageView(coin);
-    coinView.setFitWidth(50);
-    coinView.setFitHeight(50);
+    coinView.setFitWidth(25);
+    coinView.setFitHeight(25);
 
     // Why error with where the image is spawed
-    coinView.setTranslateY( Math.random() * 400);
-//    System.out.println(coinView.getTranslateY());
+    coinView.setTranslateY( Math.random() * (backgroundHeight - coinView.getFitHeight()));
+
+    //    System.out.println(coinView.getTranslateY());
+
+    float colisionCenterX = (float) (coinView.getTranslateX()+(coinView.getFitWidth()/2));
+    float colisionCenterY = (float) (coinView.getTranslateY()+(coinView.getFitHeight()/2));
+
+    float radiusCoin = (float)(coinView.getFitWidth()/2);
+
 
     // Coin position outside the screen
     coinView.setTranslateX(width);
@@ -289,7 +348,7 @@ private void createCoin(Pane root, double width, List<ImageView> coins) {
 
 }
 
-    private void createHeroTank(Pane root , List<ImageView> herosTank , double width,  double backgroundHeight,float random){
+    private void createHeroTank(Pane root , List<ImageView> herosTank , double width,  double backgroundHeight){
 
 
 
@@ -302,18 +361,11 @@ private void createCoin(Pane root, double width, List<ImageView> coins) {
 
         // Transport part
         heroTankView.setTranslateX(width);
-        heroTankView.setTranslateY(random*backgroundHeight);
+        heroTankView.setTranslateY(Math.random()*(backgroundHeight-heroTankView.getFitHeight()));
 
         float colisionCenterX = (float) (heroTankView.getTranslateX()+(heroTankView.getFitWidth()/2));
         float colisionCenterY = (float) (heroTankView.getTranslateY()+(heroTankView.getFitHeight()/2));
 
-        System.out.println(heroTankView.getFitHeight());
-        System.out.println(heroTankView.getTranslateX());
-        System.out.println(colisionCenterX);
-
-        System.out.println(heroTankView.getFitWidth());
-        System.out.println(heroTankView.getTranslateY());
-        System.out.println(colisionCenterY);
 
 
        Timeline timeline = new Timeline();
@@ -343,10 +395,12 @@ private void createCoin(Pane root, double width, List<ImageView> coins) {
 
 
 
-        public int getRandomNumber(int min, int max) {
+    public int getRandomNumber(int min, int max) {
             return (int) ((Math.random() * (max - min)) + min);
         }
-
+    private boolean checkCollision(Node node1, Node node2) {
+        return node1.getBoundsInParent().intersects(node2.getBoundsInParent());
+    }
 
 }
 

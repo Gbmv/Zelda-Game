@@ -12,15 +12,28 @@ public class HeroBodyToBody extends Characters{
         super(50, "file:///C:\\Users\\gabri\\Desktop\\UDEM\\Hiver-2024\\IFT-1025\\TP2\\TP2\\heroSthy.webp",
                 100, 200);
     }
-    public void createHeroBody(Pane root , List<ImageView> herosBody , double width,   double backgroundHeight,float random){
+    public void createHeroBody(Pane root , List<ImageView> herosBody , double width,   double backgroundHeight){
         Image heroBody = new Image("file:///C:\\Users\\gabri\\Desktop\\UDEM\\Hiver-2024\\IFT-1025\\TP2\\TP2\\heroBody.png");
+
         ImageView heroBodyView = new ImageView(heroBody);
         heroBodyView.setFitWidth(100);
         heroBodyView.setFitHeight(100);
+
+        double positionY = Math.random() * (backgroundHeight - heroBodyView.getFitHeight());
+
         heroBodyView.setTranslateX(width);
-        heroBodyView.setTranslateY( random * backgroundHeight );
+        heroBodyView.setTranslateY( Math.random() * (positionY) );
+
+        float colisionCenterX = (float) (heroBodyView.getTranslateX()+(heroBodyView.getFitWidth()/2));
+        float colisionCenterY = (float) (positionY+(heroBodyView.getFitHeight()/2));
+
+        float radius = (float)(heroBodyView.getFitWidth()/2);
+
+
         herosBody.add(heroBodyView);
         root.getChildren().add(heroBodyView);
+
+
     }
 }
 

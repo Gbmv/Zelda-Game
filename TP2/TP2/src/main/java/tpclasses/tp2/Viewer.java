@@ -1,15 +1,22 @@
 package tpclasses.tp2;
 import javafx.animation.*;
 import javafx.application.Application;
+import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
+import javafx.scene.control.Button;
+import javafx.scene.control.Menu;
+import javafx.scene.control.MenuBar;
+import javafx.scene.control.MenuItem;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyCode;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.shape.Circle;
+import javafx.scene.text.Text;
 import javafx.stage.Stage;
 import javafx.util.Duration;
 import java.util.ArrayList;
@@ -18,7 +25,8 @@ import java.util.List;
 import java.util.Random;
 
 public class Viewer extends Application {
-
+    boolean gameStop = false;
+    AnimationTimer timer;
     public static void main(String[] args) {
         launch(args);
     }
@@ -37,9 +45,23 @@ public class Viewer extends Application {
         Canvas canvas = new Canvas(width,height);
         GraphicsContext context = canvas.getGraphicsContext2D();
         Random random = new Random();
+        Button button = new Button("Resume");
+        button.setFocusTraversable(false);
+        Text coinCounter = new Text("Coin: ");
+        Text lifeCounter = new Text("Life: ");
+        HBox hBox = new HBox();
 
+// Defina o espaçamento entre os elementos do HBox
+        hBox.setSpacing(10); // Defina o espaçamento como 10 pixels
 
+        hBox.getChildren().addAll(lifeCounter, button, coinCounter);
 
+// Defina a posição do HBox
+        hBox.setLayoutX((width - hBox.getBoundsInParent().getWidth()) / 2); // Centralize horizontalmente
+        hBox.setLayoutY(height - 35); // Coloque 35 pixels acima da parte inferior da janela
+        hBox.setAlignment(Pos.CENTER);
+
+        root.getChildren().add(hBox);
 
 
         //---------------------------------------------- Background --------------------------------------------------//
@@ -78,12 +100,31 @@ public class Viewer extends Application {
         translationImage1.setInterpolator(Interpolator.LINEAR);
         translationImage1.setCycleCount(TranslateTransition.INDEFINITE);
 
-
         TranslateTransition translationImage2 = new TranslateTransition(Duration.seconds(10), backgroundViewer2);
         translationImage2.setFromX(width);
         translationImage2.setToX(0);
         translationImage2.setInterpolator(Interpolator.LINEAR);
         translationImage2.setCycleCount(TranslateTransition.INDEFINITE);
+
+
+
+        // Adicione um evento de clique ao botão
+        button.setOnMouseClicked(event -> {
+            if (!gameStop) {
+                // Se o jogo não estiver pausado, pause-o
+                timer.stop(); // Pare o AnimationTimer
+                translationImage1.pause();
+                translationImage2.pause();
+                button.setText("Resume"); // Altere o texto do botão para "Resume"
+            } else {
+                // Se o jogo estiver pausado, retome-o
+                timer.start(); // Retome o AnimationTimer
+                translationImage1.play();
+                translationImage2.play();
+                button.setText("Play"); // Altere o texto do botão para "Resume"
+            }
+            gameStop = !gameStop; // Inverta o estado do jogo
+        });
         // ----------------------------------------------------------------------------------------------------------//
 
         List<ImageView> herosTank = new ArrayList<>();
@@ -95,16 +136,16 @@ public class Viewer extends Application {
         HeroBodyToBody heroBodyToBody = new HeroBodyToBody();
 
 
-        AnimationTimer timer = new AnimationTimer() {
+         timer = new AnimationTimer() {
             private long lastTime = System.nanoTime();
             double speed_y = 0;
 
-            final double gravity = enemy.getGravity();
+            double gravity = enemy.getGravity();
 
             private double timerHero;
             private double timerCoin;
             private double timerHeroTank;
-            final double backgroundSpeed = 50;
+            double backgroundSpeed = 50;
 
             // Height of the background
             final double backgroundHeight = backgroundImage.getHeight();
@@ -116,10 +157,20 @@ public class Viewer extends Application {
                 timerHero+=deltaTime;
                 timerCoin+=deltaTime;
                 timerHeroTank +=deltaTime;
-
                 lastTime = now;
+                double conterCoin = 0;
 
-                System.out.println(backgroundHeight);
+                // Defines the translation in the background
+                backgroundViewer1.setTranslateX(backgroundViewer1.getTranslateX() - backgroundSpeed * deltaTime);
+                backgroundViewer2.setTranslateX(backgroundViewer2.getTranslateX() - backgroundSpeed * deltaTime);
+
+                if (backgroundViewer1.getTranslateX() <= 1-width){
+                    backgroundViewer1.setTranslateX(width);
+                }
+                if (backgroundViewer2.getTranslateX() <= 1-width){
+                    backgroundViewer2.setTranslateX(width);
+                }
+
             //-------------------------Implementation of the heros----------------------------------------------------//
 //                System.out.println(timerHero);
 //                if(timerHeroTank>=0.5){
@@ -146,41 +197,38 @@ public class Viewer extends Application {
                 for(ImageView heroSthyViwer: herosSthy ){
                     double newX = heroSthyViwer.getTranslateX()-backgroundSpeed * deltaTime;
                     heroSthyViwer.setTranslateX(newX);
+                    boolean colision = checkCollision(enemyView, heroSthyViwer);
 
                     if(newX <-width){
                         root.getChildren().remove(heroSthyViwer);
                         herosSthy.remove(heroSthyViwer);
                         break;
                     }
-
                     // Check for collision between enemy and hero
-                    if (checkCollision(enemyView, heroSthyViwer)) {
+                    else if (colision) {
                         // Handle the collision here
                         // For example:
                         root.getChildren().remove(heroSthyViwer); // Remove hero from screen
                         herosSthy.remove(heroSthyViwer); // Remove hero from the list
-
-                        // You might also reduce health or trigger other effects here
                     }
                 }
 
                 for(ImageView heroBodyView: herosBody ){
                     double newX = heroBodyView.getTranslateX()-backgroundSpeed * deltaTime;
                     heroBodyView.setTranslateX(newX);
+                    boolean colision = checkCollision(enemyView, heroBodyView);
 
                     if(newX <-width){
                         root.getChildren().remove(heroBodyView);
                         herosBody.remove(heroBodyView);
                         break;
                     }
-
                     // Check for collision between enemy and hero
-                    if (checkCollision(enemyView, heroBodyView)) {
+                    if (colision) {
                         // Handle the collision here
                         // For example:
                         root.getChildren().remove(heroBodyView); // Remove hero from screen
                         herosBody.remove(heroBodyView); // Remove hero from the list
-
                         // You might also reduce health or trigger other effects here
                     }
                 }
@@ -188,19 +236,20 @@ public class Viewer extends Application {
                 for(ImageView heroTankView:herosTank){
                     double newX = heroTankView.getTranslateX()-backgroundSpeed * deltaTime;
                     heroTankView.setTranslateX(newX);
+                    boolean colision =checkCollision(enemyView, heroTankView);
 
                     if(newX <-width){
                         root.getChildren().remove(heroTankView);
                         herosTank.remove(heroTankView);
                         break;
                     }
-
                     // Check for collision between enemy and hero
-                    if (checkCollision(enemyView, heroTankView)) {
+                    if (colision) {
                         // Handle the collision here
                         // For example:
                         root.getChildren().remove(heroTankView); // Remove hero from screen
                         herosTank.remove(heroTankView); // Remove hero from the list
+
                     }
                 }
 
@@ -209,14 +258,16 @@ public class Viewer extends Application {
 
                 if (timerCoin >= 2) {
                     createCoin(root, width, coins,backgroundHeight);
+                    conterCoin+=1;
                     timerCoin  = 0;
                 }
 
                 // Animate the movement of existing coins
                 for (ImageView coinView : coins) {
+                    double conterCoins = 0;
                     double newX = coinView.getTranslateX() - backgroundSpeed * deltaTime;
                     coinView.setTranslateX(newX);
-
+                    boolean colision = checkCollision(enemyView, coinView);
 
                     // Remove coin if it goes out of screen
                     if (newX < -width ) {
@@ -224,29 +275,28 @@ public class Viewer extends Application {
                         coins.remove(coinView);
                         break;
                     }
-                    if (checkCollision(enemyView, coinView)) {
-                        // Handle the collision here
-                        // For example:
+                    // Handle the collision
+                    if (colision) {
+                        coins.remove(coinView); // Remove coin from the list
                         root.getChildren().remove(coinView); // Remove coin from screen
-                        herosTank.remove(coinView); // Remove coin from the list
-
-
+                        backgroundSpeed = backgroundSpeed+ 10; // Increases the speed
+//                        try {
+//                            Thread.sleep(500);
+//                        } catch (InterruptedException e) {
+//                            throw new RuntimeException(e);
+//                        }
+                        System.out.println(backgroundSpeed);
+                        if (speed_y >=300){
+                            speed_y = 300;
+                        }
+                        break;
                     }
 
                 }
                 //----------------------------------------------------------------------------------------------------//
 
 
-                // Defines the translation in the background
-                backgroundViewer1.setTranslateX(backgroundViewer1.getTranslateX() - backgroundSpeed * deltaTime);
-                backgroundViewer2.setTranslateX(backgroundViewer2.getTranslateX() - backgroundSpeed * deltaTime);
 
-                if (backgroundViewer1.getTranslateX() <= 1-width){
-                    backgroundViewer1.setTranslateX(width);
-                }
-                if (backgroundViewer2.getTranslateX() <= 1-width){
-                    backgroundViewer2.setTranslateX(width);
-                }
 
 
 
@@ -274,8 +324,6 @@ public class Viewer extends Application {
                 // Update the position of the enemy
                 enemyView.setLayoutY(newY);
 
-
-
                 // Space bar pressed, the enemy jumps
                 scene.setOnKeyPressed(event -> {
                     if (event.getCode() == KeyCode.SPACE) {
@@ -284,31 +332,6 @@ public class Viewer extends Application {
                 });
                 //---------------------------------------------------------------------------------------------------//
 
-                //-----------------------------------Implementation of the colision----------------------------------//
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-                //---------------------------------------------------------------------------------------------------//
                 // Clean the context
                 context.clearRect(0, 0, canvas.getWidth(), canvas.getHeight());
 
@@ -319,6 +342,9 @@ public class Viewer extends Application {
         stage.setScene(scene);
         stage.show();
     }
+
+
+
 
 
 private void createCoin(Pane root, double width, List<ImageView> coins, double backgroundHeight) {
@@ -332,12 +358,7 @@ private void createCoin(Pane root, double width, List<ImageView> coins, double b
     // Why error with where the image is spawed
     coinView.setTranslateY( Math.random() * (backgroundHeight - coinView.getFitHeight()));
 
-    //    System.out.println(coinView.getTranslateY());
 
-    float colisionCenterX = (float) (coinView.getTranslateX()+(coinView.getFitWidth()/2));
-    float colisionCenterY = (float) (coinView.getTranslateY()+(coinView.getFitHeight()/2));
-
-    float radiusCoin = (float)(coinView.getFitWidth()/2);
 
 
     // Coin position outside the screen
@@ -354,8 +375,8 @@ private void createCoin(Pane root, double width, List<ImageView> coins, double b
 
         Image heroTank = new Image("file:///C:\\Users\\gabri\\Desktop\\UDEM\\Hiver-2024\\IFT-1025\\TP2\\TP2\\heroTank.png");
         ImageView heroTankView = new ImageView(heroTank);
-        heroTankView.setFitHeight(100);
-        heroTankView.setFitWidth(100);
+        heroTankView.setFitHeight(75);
+        heroTankView.setFitWidth(75);
 
 
 
@@ -363,8 +384,7 @@ private void createCoin(Pane root, double width, List<ImageView> coins, double b
         heroTankView.setTranslateX(width);
         heroTankView.setTranslateY(Math.random()*(backgroundHeight-heroTankView.getFitHeight()));
 
-        float colisionCenterX = (float) (heroTankView.getTranslateX()+(heroTankView.getFitWidth()/2));
-        float colisionCenterY = (float) (heroTankView.getTranslateY()+(heroTankView.getFitHeight()/2));
+
 
 
 
@@ -382,22 +402,16 @@ private void createCoin(Pane root, double width, List<ImageView> coins, double b
 
        timeline.getKeyFrames().addAll(keyFrame);
        timeline.play();
-
-
-        herosTank.add(heroTankView);
-        root.getChildren().add(heroTankView);
+       herosTank.add(heroTankView);
+       root.getChildren().add(heroTankView);
 
     }
-
-
-
-
-
-
 
     public int getRandomNumber(int min, int max) {
             return (int) ((Math.random() * (max - min)) + min);
         }
+
+    //-----------------------------------Implementation of the colision----------------------------------------------//
     private boolean checkCollision(Node node1, Node node2) {
         return node1.getBoundsInParent().intersects(node2.getBoundsInParent());
     }

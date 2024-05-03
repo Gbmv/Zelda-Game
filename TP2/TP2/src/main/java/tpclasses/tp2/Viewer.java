@@ -1,6 +1,8 @@
 package tpclasses.tp2;
 import javafx.animation.*;
 import javafx.application.Application;
+import javafx.event.ActionEvent;
+import javafx.event.EventHandler;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.Scene;
@@ -15,7 +17,10 @@ import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyCode;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
+import javafx.scene.layout.StackPane;
+import javafx.scene.layout.VBox;
 import javafx.scene.shape.Circle;
+import javafx.scene.text.Font;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
 import javafx.util.Duration;
@@ -30,7 +35,8 @@ public class Viewer extends Application {
     public static void main(String[] args) {
         launch(args);
     }
-
+    boolean cooldownAtivo = false;
+    long lastShoot=0;
 
     @Override
     public void start(Stage stage) throws Exception {
@@ -47,16 +53,15 @@ public class Viewer extends Application {
         Random random = new Random();
         Button button = new Button("Resume");
         button.setFocusTraversable(false);
-        Text coinCounter = new Text("Coin: ");
-        Text lifeCounter = new Text("Life: ");
+
+        Text coinCounter = new Text("Coin: 0");
+        Text lifeCounter = new Text("Life: 100");
         HBox hBox = new HBox();
 
-// Defina o espaçamento entre os elementos do HBox
-        hBox.setSpacing(10); // Defina o espaçamento como 10 pixels
-
+        hBox.setSpacing(10);
         hBox.getChildren().addAll(lifeCounter, button, coinCounter);
 
-// Defina a posição do HBox
+        // Botton pause
         hBox.setLayoutX((width - hBox.getBoundsInParent().getWidth()) / 2); // Centralize horizontalmente
         hBox.setLayoutY(height - 35); // Coloque 35 pixels acima da parte inferior da janela
         hBox.setAlignment(Pos.CENTER);
@@ -106,7 +111,14 @@ public class Viewer extends Application {
         translationImage2.setInterpolator(Interpolator.LINEAR);
         translationImage2.setCycleCount(TranslateTransition.INDEFINITE);
 
+        HeroStealthy heroStealthy = new HeroStealthy();
+        HeroBodyToBody heroBodyToBody = new HeroBodyToBody();
 
+
+        List<ImageView> herosTank = new ArrayList<>();
+        List<ImageView> herosBody = new ArrayList<>();
+        List<ImageView> herosSthy = new ArrayList<>();
+        List<ImageView> coins = new ArrayList<>();
 
         // Adicione um evento de clique ao botão
         button.setOnMouseClicked(event -> {
@@ -127,13 +139,15 @@ public class Viewer extends Application {
         });
         // ----------------------------------------------------------------------------------------------------------//
 
-        List<ImageView> herosTank = new ArrayList<>();
-        List<ImageView> herosBody = new ArrayList<>();
-        List<ImageView> herosSthy = new ArrayList<>();
-        List<ImageView> coins = new ArrayList<>();
+        Timeline cooldown = new Timeline(new KeyFrame(Duration.seconds(1), new EventHandler<ActionEvent>() {
+            @Override
+            public void handle(ActionEvent event) {
+                cooldownAtivo = false; // Quando o tempo acabar, o cooldown é desativado
+            }
+        }));
+        cooldown.setCycleCount(1);
 
-        HeroStealthy heroStealthy = new HeroStealthy();
-        HeroBodyToBody heroBodyToBody = new HeroBodyToBody();
+// Pode colocar a vida e coins como getLife, getMoney
 
 
          timer = new AnimationTimer() {
@@ -149,6 +163,9 @@ public class Viewer extends Application {
 
             // Height of the background
             final double backgroundHeight = backgroundImage.getHeight();
+            int numberCoin = 0;
+
+            int numberLife = 100;
 
 
             @Override
@@ -158,7 +175,7 @@ public class Viewer extends Application {
                 timerCoin+=deltaTime;
                 timerHeroTank +=deltaTime;
                 lastTime = now;
-                double conterCoin = 0;
+
 
                 // Defines the translation in the background
                 backgroundViewer1.setTranslateX(backgroundViewer1.getTranslateX() - backgroundSpeed * deltaTime);
@@ -205,11 +222,19 @@ public class Viewer extends Application {
                         break;
                     }
                     // Check for collision between enemy and hero
-                    else if (colision) {
+                    if (colision) {
                         // Handle the collision here
                         // For example:
                         root.getChildren().remove(heroSthyViwer); // Remove hero from screen
                         herosSthy.remove(heroSthyViwer); // Remove hero from the list
+                        numberCoin -=10;
+                        if(numberCoin<=0){
+                            numberCoin = 0;
+                        }
+                        coinCounter.setText("Coins: " + numberCoin);
+
+//                         E pressed, the enemy is dead
+
                     }
                 }
 
@@ -230,6 +255,9 @@ public class Viewer extends Application {
                         root.getChildren().remove(heroBodyView); // Remove hero from screen
                         herosBody.remove(heroBodyView); // Remove hero from the list
                         // You might also reduce health or trigger other effects here
+//                        enemy.setLife(0);
+                        root.getChildren().remove(hBox);
+                        timer.stop();
                     }
                 }
 
@@ -245,30 +273,37 @@ public class Viewer extends Application {
                     }
                     // Check for collision between enemy and hero
                     if (colision) {
+                        numberLife-=50;
+                        enemy.setLife(enemy.getLife()-50);
                         // Handle the collision here
                         // For example:
                         root.getChildren().remove(heroTankView); // Remove hero from screen
                         herosTank.remove(heroTankView); // Remove hero from the list
+                        lifeCounter.setText("Life: " + String.valueOf(numberLife));
 
                     }
                 }
 
+                // Enemy is dead
+                if (enemy.getLife()<=0){
+                    gameOver(root, scene.getHeight(), numberCoin,lastTime);
+                    root.getChildren().remove(hBox);
+                    timer.stop();
+                }
 
             //-----------------------------Implementation of the coins------------------------------------------------//
 
                 if (timerCoin >= 2) {
                     createCoin(root, width, coins,backgroundHeight);
-                    conterCoin+=1;
                     timerCoin  = 0;
                 }
 
                 // Animate the movement of existing coins
                 for (ImageView coinView : coins) {
-                    double conterCoins = 0;
+//                    int conterCoins = 0;
                     double newX = coinView.getTranslateX() - backgroundSpeed * deltaTime;
                     coinView.setTranslateX(newX);
                     boolean colision = checkCollision(enemyView, coinView);
-
                     // Remove coin if it goes out of screen
                     if (newX < -width ) {
                         root.getChildren().remove(coinView);
@@ -280,12 +315,10 @@ public class Viewer extends Application {
                         coins.remove(coinView); // Remove coin from the list
                         root.getChildren().remove(coinView); // Remove coin from screen
                         backgroundSpeed = backgroundSpeed+ 10; // Increases the speed
-//                        try {
-//                            Thread.sleep(500);
-//                        } catch (InterruptedException e) {
-//                            throw new RuntimeException(e);
-//                        }
+                        numberCoin++; // enemy.setMoney(+1)
+                        System.out.println(numberCoin);
                         System.out.println(backgroundSpeed);
+                        coinCounter.setText("Coin: " + String.valueOf(numberCoin));
                         if (speed_y >=300){
                             speed_y = 300;
                         }
@@ -329,11 +362,71 @@ public class Viewer extends Application {
                     if (event.getCode() == KeyCode.SPACE) {
                         speed_y = enemy.getJumpSpeed(); // The speed of the jump
                     }
+                    if (event.getCode() == KeyCode.E) {
+                        if(now-lastShoot >=10e8){
+                            lastShoot = now;
+
+
+                        for(ImageView heroSthyViwer:herosSthy){
+                            if (Math.abs(enemyView.getLayoutY() - heroSthyViwer.getTranslateY()) <= heroSthyViwer.getFitHeight() / 2) {
+                                numberCoin +=8;
+                                root.getChildren().remove(heroSthyViwer); // Remove hero from screen
+                                herosSthy.remove(heroSthyViwer); // Remove hero from the list
+                                //System.out.println("hit");
+                                heroSthyViwer.setTranslateY(height);
+                                coinCounter.setText("Coins: " + numberCoin);
+                                break;
+                            }
+                        }
+                        for(ImageView heroBodyView: herosBody){
+                            if (Math.abs(enemyView.getLayoutY() - heroBodyView.getTranslateY()) <= heroBodyView.getFitHeight() / 2) {
+                                numberCoin +=5;
+                                root.getChildren().remove(heroBodyView); // Remove hero from screen
+                                herosSthy.remove(heroBodyView); // Remove hero from the list
+                                heroBodyView.setTranslateY(height);
+                                //System.out.println("hit");
+                                coinCounter.setText("Coins: " + numberCoin);
+                                break;
+                            }
+                        }
+                        for(ImageView heroTankView:herosTank){
+                            if (Math.abs(enemyView.getLayoutY() - heroTankView.getTranslateY()) <= heroTankView.getFitHeight() / 2) {
+                                numberCoin +=7;
+                                root.getChildren().remove(heroTankView); // Remove hero from screen
+                                herosTank.remove(heroTankView); // Remove hero from the list
+                                //System.out.println("hit");
+                                heroTankView.setTranslateY(height);
+                                coinCounter.setText("Coins: " + numberCoin);
+                                break;
+                            }
+                        }
+
+
+                        }
+
+
+                    }
                 });
                 //---------------------------------------------------------------------------------------------------//
 
+                //--------------------------------------- Implementation of the gun----------------------------------//
+
+
+
+
+                //---------------------------------------------------------------------------------------------------//
+
+
+
+
+
+
                 // Clean the context
                 context.clearRect(0, 0, canvas.getWidth(), canvas.getHeight());
+
+
+
+
 
             }
         };
@@ -415,6 +508,30 @@ private void createCoin(Pane root, double width, List<ImageView> coins, double b
     private boolean checkCollision(Node node1, Node node2) {
         return node1.getBoundsInParent().intersects(node2.getBoundsInParent());
     }
+    private void gameOver(Pane root, double sceneHeight, int coins, long lastTime) {
+        // Create the Game Over text
+        Text textOver = new Text("Game Over!!! Merci Robin");
+        textOver.setFont(Font.font("Arial", 21));
+
+//        // Create the texts for Coins and Time
+//        Text coinText = new Text("Coins: " + coins );
+//        Text tempText = new Text("Time: " + "s") ; // Calculating the time elapsed
+
+        // Create a VBox to organize the elements vertically
+        VBox overVbox = new VBox();
+        overVbox.getChildren().addAll(textOver);
+        overVbox.setAlignment(Pos.CENTER); // Center the elements vertically
+
+
+        // Center the VBox on the scene
+        overVbox.setLayoutX(100);
+        overVbox.setLayoutY(100);
+
+        // Add the VBox to the root pane
+        root.getChildren().add(overVbox);
+    }
+
+
 
 }
 

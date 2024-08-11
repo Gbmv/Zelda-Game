@@ -1,0 +1,1 @@
+This program is a side-scrolling platform game developed to explore the various capabilities of JavaFX. The purpose of this project is to leverage the different features and tools provided by JavaFX to create an engaging and functional game
